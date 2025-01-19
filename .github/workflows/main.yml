@@ -7,7 +7,7 @@ on:
 
 jobs:
   terraform:
-    name: Destroy and Reapply Infrastructure
+    name: Apply Infrastructure
     runs-on: ubuntu-latest
 
     steps:
@@ -33,11 +33,7 @@ jobs:
     - name: Initialize Terraform
       run: terraform -chdir=terraform init
 
-    # Step 5: Destroy existing infrastructure
-    - name: Terraform Destroy
-      run: terraform -chdir=terraform destroy -auto-approve
-
-    # Step 6: Apply Terraform to recreate infrastructure
+    # Step 5: Apply Terraform to recreate infrastructure
     - name: Terraform Apply
       run: terraform -chdir=terraform apply -auto-approve
 
