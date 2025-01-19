@@ -31,15 +31,15 @@ jobs:
 
     # Step 4: Initialize Terraform
     - name: Initialize Terraform
-      run: terraform init
+      run: terraform -chdir=terraform init
 
     # Step 5: Plan Terraform
     - name: Terraform Plan
-      run: terraform plan
+      run: terraform -chdir=terraform plan
 
     # Step 6: Apply Terraform
     - name: Terraform Apply
-      run: terraform apply -auto-approve
+      run: terraform -chdir=terraform apply -auto-approve
 
   static_site:
     name: Deploy Static Site
