@@ -13,8 +13,3 @@ variable "bucket_assets" {
 variable "domain_name" {
   default = "new-timmy-8.serverless.my.id"
 }
-
-variable "route53_zone_id" {
-  description = "The Route 53 hosted zone ID for your domain"
-  type        = string
-}
