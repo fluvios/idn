@@ -1,0 +1,72 @@
+name: Deploy Infrastructure and Static Site
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Step 2: Set up AWS credentials
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-southeast-1
+
+    # Step 3: Set up Terraform
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.5.7
+
+    # Step 4: Initialize Terraform
+    - name: Initialize Terraform
+      run: terraform -chdir=terraform init
+
+    # Step 5: Plan Terraform
+    - name: Terraform Plan
+      run: terraform -chdir=terraform plan -out=tfplan
+
+    # Step 6: Apply Terraform
+    - name: Terraform Apply
+      run: terraform -chdir=terraform apply -auto-approve tfplan
+
+  static_site:
+    name: Deploy Static Site
+    needs: terraform
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Step 2: Set up AWS credentials
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-southeast-1
+
+    # Step 3: Sync static files to S3 bucket
+    - name: Upload static site to S3
+      run: |
+        # Replace "idn-new-timmy-x" with your actual bucket name
+        aws s3 sync ./dist s3://idn-new-timmy-x --delete
+
+    # Step 4: Invalidate CloudFront cache (optional)
+    - name: Invalidate CloudFront cache
+      run: |
+        # Replace CLOUDFRONT_DISTRIBUTION_ID with your actual CloudFront distribution ID
+        aws cloudfront create-invalidation --distribution-id CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
