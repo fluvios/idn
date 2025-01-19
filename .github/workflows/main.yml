@@ -1,4 +1,4 @@
-name: Deploy Infrastructure and Static Site
+name: IDN AWS Deployment
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   terraform:
-    name: Deploy Infrastructure
+    name: Destroy and Reapply Infrastructure
     runs-on: ubuntu-latest
 
     steps:
@@ -33,13 +33,13 @@ jobs:
     - name: Initialize Terraform
       run: terraform -chdir=terraform init
 
-    # Step 5: Plan Terraform
-    - name: Terraform Plan
-      run: terraform -chdir=terraform plan -out=tfplan
+    # Step 5: Destroy existing infrastructure
+    - name: Terraform Destroy
+      run: terraform -chdir=terraform destroy -auto-approve
 
-    # Step 6: Apply Terraform
+    # Step 6: Apply Terraform to recreate infrastructure
     - name: Terraform Apply
-      run: terraform -chdir=terraform apply -auto-approve tfplan
+      run: terraform -chdir=terraform apply -auto-approve
 
   static_site:
     name: Deploy Static Site
@@ -65,8 +65,8 @@ jobs:
         # Replace "idn-new-timmy-x" with your actual bucket name
         aws s3 sync ./dist s3://idn-new-timmy-x --delete
 
-    # Step 4: Invalidate CloudFront cache (optional)
+    # Step 4: Invalidate CloudFront cache
     - name: Invalidate CloudFront cache
       run: |
         # Replace CLOUDFRONT_DISTRIBUTION_ID with your actual CloudFront distribution ID
-        aws cloudfront create-invalidation --distribution-id CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
