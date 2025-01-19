@@ -66,11 +66,12 @@ resource "aws_s3_bucket_policy" "default_site_policy" {
 # CloudFront Distribution
 resource "aws_cloudfront_distribution" "cdn" {
   enabled = true
+  default_root_object = "index.html"
 
   # Default origin: S3 bucket for main site
   origin {
     domain_name = aws_s3_bucket.default_site.bucket_regional_domain_name
-    origin_id   = "DefaultS3Origin"
+    origin_id   = "idn-new-timmy-8"
 
     s3_origin_config {
       origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
@@ -80,7 +81,7 @@ resource "aws_cloudfront_distribution" "cdn" {
   # Additional origin: Existing S3 bucket for assets
   origin {
     domain_name = data.aws_s3_bucket.asset_bucket.bucket_regional_domain_name
-    origin_id   = "AssetS3Origin"
+    origin_id   = "bucket-new-timmy-idn"
 
     s3_origin_config {
       origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
@@ -89,7 +90,7 @@ resource "aws_cloudfront_distribution" "cdn" {
 
   # Default behavior for main site
   default_cache_behavior {
-    target_origin_id       = "DefaultS3Origin"
+    target_origin_id       = "idn-new-timmy-8"
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
@@ -105,7 +106,7 @@ resource "aws_cloudfront_distribution" "cdn" {
   # Behavior for asset-img-broken.png
   ordered_cache_behavior {
     path_pattern           = "/asset-img-broken.png"
-    target_origin_id       = "AssetS3Origin"
+    target_origin_id       = "bucket-new-timmy-idn"
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
@@ -124,7 +125,8 @@ resource "aws_cloudfront_distribution" "cdn" {
   # SSL settings for HTTPS
   viewer_certificate {
     acm_certificate_arn = "arn:aws:acm:us-east-1:166190020492:certificate/1119d63b-db83-4afb-b726-4a8944f6ec7f"
-    ssl_support_method   = "sni-only"
+    ssl_support_method = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 
   restrictions {
@@ -147,7 +149,7 @@ resource "aws_route53_record" "subdomain" {
   alias {
     name                   = aws_cloudfront_distribution.cdn.domain_name
     zone_id                = aws_cloudfront_distribution.cdn.hosted_zone_id
-    evaluate_target_health = true
+    evaluate_target_health = false
   }
 }
 
