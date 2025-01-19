@@ -2,7 +2,10 @@ provider "aws" {
   region = "ap-southeast-1"
 }
 
-# S3 Bucket for Static Website
+data "aws_route53_zone" "zone" {
+  name = "serverless.my.id."
+}
+
 resource "aws_s3_bucket" "static_site" {
   bucket = "idn-new-timmy-8"
 
@@ -11,40 +14,14 @@ resource "aws_s3_bucket" "static_site" {
   }
 }
 
-resource "aws_s3_bucket_acl" "static_site_acl" {
-  bucket = aws_s3_bucket.static_site.id
-  acl    = "public-read"
+resource "aws_s3_bucket_public_access_block" "static_site" {
+  bucket                  = aws_s3_bucket.static_site.id
+  block_public_acls       = false
+  ignore_public_acls      = false
+  block_public_policy     = false
+  restrict_public_buckets = false
 }
 
-resource "aws_s3_bucket_website_configuration" "static_site_config" {
-  bucket = aws_s3_bucket.static_site.id
-
-  index_document {
-    suffix = "index.html"
-  }
-
-  error_document {
-    key = "error.html"
-  }
-}
-
-resource "aws_s3_bucket_policy" "static_site_policy" {
-  bucket = aws_s3_bucket.static_site.id
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid       = "PublicReadGetObject",
-        Effect    = "Allow",
-        Principal = "*",
-        Action    = "s3:GetObject",
-        Resource  = "${aws_s3_bucket.static_site.arn}/*"
-      }
-    ]
-  })
-}
-
-# CloudFront Distribution
 resource "aws_cloudfront_distribution" "cdn" {
   origin {
     domain_name = aws_s3_bucket.static_site.bucket_regional_domain_name
@@ -83,11 +60,6 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 }
 
-# Route 53 DNS Record
-data "aws_route53_zone" "zone" {
-  name = "serverless.my.id."
-}
-
 resource "aws_route53_record" "subdomain" {
   zone_id = data.aws_route53_zone.zone.zone_id
   name    = "new-timmy-8.serverless.my.id"
@@ -97,5 +69,9 @@ resource "aws_route53_record" "subdomain" {
     name                   = aws_cloudfront_distribution.cdn.domain_name
     zone_id                = aws_cloudfront_distribution.cdn.hosted_zone_id
     evaluate_target_health = false
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
