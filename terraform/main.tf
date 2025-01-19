@@ -77,9 +77,8 @@ resource "aws_cloudfront_distribution" "cdn" {
 
   # SSL settings for HTTPS
   viewer_certificate {
-    acm_certificate_arn      = "arn:aws:acm:us-east-1:***:certificate/1119d63b-db83-4afb-b726-4a8944f6ec7f"
-    minimum_protocol_version = "TLSv1"
-    ssl_support_method       = "sni-only"
+    acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/1119d63b-db83-4a8944f6ec7f"
+    ssl_support_method   = "sni-only"
   }
 
   restrictions {
