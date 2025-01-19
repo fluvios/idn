@@ -2,7 +2,12 @@ provider "aws" {
   region = "ap-southeast-1"
 }
 
-# Reference the existing S3 bucket
+# Fetch the Route 53 hosted zone
+data "aws_route53_zone" "zone" {
+  name = "serverless.my.id."
+}
+
+# Reference the existing S3 bucket for assets
 data "aws_s3_bucket" "asset_bucket" {
   bucket = "bucket-new-timmy-idn"
 }
@@ -17,6 +22,8 @@ resource "aws_s3_bucket" "default_site" {
 
 # CloudFront Distribution
 resource "aws_cloudfront_distribution" "cdn" {
+  enabled = true
+
   # Default origin: S3 bucket for main site
   origin {
     domain_name = aws_s3_bucket.default_site.bucket_regional_domain_name
@@ -27,7 +34,7 @@ resource "aws_cloudfront_distribution" "cdn" {
     }
   }
 
-  # Additional origin: Existing S3 bucket
+  # Additional origin: Existing S3 bucket for assets
   origin {
     domain_name = data.aws_s3_bucket.asset_bucket.bucket_regional_domain_name
     origin_id   = "AssetS3Origin"
@@ -87,7 +94,7 @@ resource "aws_cloudfront_distribution" "cdn" {
 
 # ACM Certificate
 resource "aws_acm_certificate" "cert" {
-  domain_name       = "new-timmy-x.serverless.my.id"
+  domain_name       = "new-timmy-8.serverless.my.id"
   validation_method = "DNS"
 
   tags = {
@@ -122,7 +129,7 @@ resource "aws_acm_certificate_validation" "cert_validation" {
 # Route 53 Record for the Subdomain
 resource "aws_route53_record" "subdomain" {
   zone_id = data.aws_route53_zone.zone.zone_id
-  name    = "new-timmy-x.serverless.my.id"
+  name    = "new-timmy-8.serverless.my.id"
   type    = "A"
 
   alias {
