@@ -3,7 +3,7 @@ variable "aws_region" {
 }
 
 variable "bucket_static" {
-  default = "idn-new-timmy-x"
+  default = "idn-new-timmy-8"
 }
 
 variable "bucket_assets" {
@@ -11,5 +11,5 @@ variable "bucket_assets" {
 }
 
 variable "domain_name" {
-  default = "new-timmy-x.serverless.my.id"
+  default = "new-timmy-8.serverless.my.id"
 }
