@@ -2,19 +2,18 @@ provider "aws" {
   region = "ap-southeast-1"
 }
 
-# Automatically retrieve the Route 53 Hosted Zone ID for your domain
-data "aws_route53_zone" "zone" {
-  name = "serverless.my.id."
-}
-
 # S3 Bucket for Static Website
 resource "aws_s3_bucket" "static_site" {
   bucket = "idn-new-timmy-8"
-  acl    = "public-read"
 
   tags = {
     Name = "StaticSiteBucket"
   }
+}
+
+resource "aws_s3_bucket_acl" "static_site_acl" {
+  bucket = aws_s3_bucket.static_site.id
+  acl    = "public-read"
 }
 
 resource "aws_s3_bucket_website_configuration" "static_site_config" {
@@ -45,12 +44,11 @@ resource "aws_s3_bucket_policy" "static_site_policy" {
   })
 }
 
-# ACM Certificate (Pre-existing Certificate)
+# ACM Certificate
 data "aws_acm_certificate" "cert" {
-  domain_name         = "new-timmy-8.serverless.my.id"
-  statuses            = ["ISSUED"]
-  most_recent         = true
-  region              = "us-east-1" # ACM for CloudFront must be in us-east-1
+  statuses = ["ISSUED"]
+  most_recent = true
+  domain = "new-timmy-8.serverless.my.id"
 }
 
 # CloudFront Distribution
@@ -93,6 +91,10 @@ resource "aws_cloudfront_distribution" "cdn" {
 }
 
 # Route 53 DNS Record
+data "aws_route53_zone" "zone" {
+  name = "serverless.my.id."
+}
+
 resource "aws_route53_record" "subdomain" {
   zone_id = data.aws_route53_zone.zone.zone_id
   name    = "new-timmy-8.serverless.my.id"
