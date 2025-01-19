@@ -5,15 +5,11 @@ provider "aws" {
 # S3 Bucket for Static Website
 resource "aws_s3_bucket" "static_site" {
   bucket = "idn-new-timmy-8"
+  acl    = "public-read"
 
   tags = {
-    Name = "StaticSite"
+    Name = "StaticSiteBucket"
   }
-}
-
-resource "aws_s3_bucket_acl" "static_site_acl" {
-  bucket = aws_s3_bucket.static_site.id
-  acl    = "public-read"
 }
 
 resource "aws_s3_bucket_website_configuration" "static_site_config" {
@@ -28,65 +24,44 @@ resource "aws_s3_bucket_website_configuration" "static_site_config" {
   }
 }
 
-# S3 Bucket for Broken Assets
-resource "aws_s3_bucket" "broken_assets" {
-  bucket = "bucket-new-timmy-idn"
-
-  tags = {
-    Name = "BrokenAssets"
-  }
+resource "aws_s3_bucket_policy" "static_site_policy" {
+  bucket = aws_s3_bucket.static_site.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject",
+        Effect    = "Allow",
+        Principal = "*",
+        Action    = "s3:GetObject",
+        Resource  = "${aws_s3_bucket.static_site.arn}/*"
+      }
+    ]
+  })
 }
 
-resource "aws_s3_bucket_acl" "broken_assets_acl" {
-  bucket = aws_s3_bucket.broken_assets.id
-  acl    = "public-read"
-}
-
-# ACM Certificate
-resource "aws_acm_certificate" "cert" {
-  domain_name       = "new-timmy-8.serverless.my.id"
-  validation_method = "DNS"
-
-  tags = {
-    Name = "ACMCertificate"
-  }
+# ACM Certificate (Pre-existing Certificate)
+data "aws_acm_certificate" "cert" {
+  domain_name         = "new-timmy-8.serverless.my.id"
+  statuses            = ["ISSUED"]
+  most_recent         = true
+  region              = "us-east-1" # ACM for CloudFront must be in us-east-1
 }
 
 # CloudFront Distribution
 resource "aws_cloudfront_distribution" "cdn" {
   origin {
     domain_name = aws_s3_bucket.static_site.bucket_regional_domain_name
-    origin_id   = "S3-static-site"
-  }
-
-  origin {
-    domain_name = aws_s3_bucket.broken_assets.bucket_regional_domain_name
-    origin_id   = "S3-broken-assets"
+    origin_id   = "S3Origin"
   }
 
   enabled = true
 
   default_cache_behavior {
+    target_origin_id       = "S3Origin"
+    viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "S3-static-site"
-    viewer_protocol_policy = "redirect-to-https"
-
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
-    }
-  }
-
-  ordered_cache_behavior {
-    path_pattern           = "/asset-img-broken.png"
-    target_origin_id       = "S3-broken-assets"
-    viewer_protocol_policy = "redirect-to-https"
-
-    allowed_methods = ["GET", "HEAD"]
-    cached_methods  = ["GET", "HEAD"]
 
     forwarded_values {
       query_string = false
@@ -97,7 +72,7 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 
   viewer_certificate {
-    acm_certificate_arn = aws_acm_certificate.cert.arn
+    acm_certificate_arn = data.aws_acm_certificate.cert.arn
     ssl_support_method   = "sni-only"
   }
 
@@ -112,11 +87,15 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 }
 
-# Route 53 Record
+# Route 53 DNS Record
 resource "aws_route53_record" "subdomain" {
-  zone_id = "ROUTE53_ZONE_ID" # Replace with your Route 53 zone ID
+  zone_id = var.route53_zone_id
   name    = "new-timmy-8.serverless.my.id"
-  type    = "CNAME"
-  ttl     = 300
-  records = [aws_cloudfront_distribution.cdn.domain_name]
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.cdn.domain_name
+    zone_id                = aws_cloudfront_distribution.cdn.hosted_zone_id
+    evaluate_target_health = false
+  }
 }
