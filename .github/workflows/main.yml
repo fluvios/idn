@@ -63,7 +63,7 @@ jobs:
     - name: Upload static site to S3
       run: |
         # Replace "idn-new-timmy-x" with your actual bucket name
-        aws s3 sync ./dist s3://idn-new-timmy-x --delete
+        aws s3 sync ./dist s3://idn-new-timmy-8 --delete
 
     # Step 4: Invalidate CloudFront cache
     - name: Invalidate CloudFront cache
