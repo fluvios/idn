@@ -44,11 +44,10 @@ resource "aws_s3_bucket_policy" "static_site_policy" {
   })
 }
 
-# ACM Certificate
-data "aws_acm_certificate" "cert" {
-  statuses = ["ISSUED"]
-  most_recent = true
-  domain = "new-timmy-8.serverless.my.id"
+# Use the ACM Certificate directly
+viewer_certificate {
+  acm_certificate_arn = "arn:aws:acm:us-east-1:166190020492:certificate/1119d63b-db83-4afb-b726-4a8944f6ec7f"
+  ssl_support_method   = "sni-only"
 }
 
 # CloudFront Distribution
@@ -75,7 +74,7 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 
   viewer_certificate {
-    acm_certificate_arn = data.aws_acm_certificate.cert.arn
+    acm_certificate_arn = "arn:aws:acm:us-east-1:166190020492:certificate/1119d63b-db83-4afb-b726-4a8944f6ec7f"
     ssl_support_method   = "sni-only"
   }
 
