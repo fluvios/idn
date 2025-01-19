@@ -7,7 +7,7 @@ on:
 
 jobs:
   terraform:
-    name: Apply Infrastructure
+    name: Terraform Apply
     runs-on: ubuntu-latest
 
     steps:
@@ -31,11 +31,15 @@ jobs:
 
     # Step 4: Initialize Terraform
     - name: Initialize Terraform
-      run: terraform -chdir=terraform init
+      run: terraform init
 
-    # Step 5: Apply Terraform to recreate infrastructure
+    # Step 5: Plan Terraform
+    - name: Terraform Plan
+      run: terraform plan
+
+    # Step 6: Apply Terraform
     - name: Terraform Apply
-      run: terraform -chdir=terraform apply -auto-approve
+      run: terraform apply -auto-approve
 
   static_site:
     name: Deploy Static Site

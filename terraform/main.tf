@@ -2,6 +2,11 @@ provider "aws" {
   region = "ap-southeast-1"
 }
 
+# Automatically retrieve the Route 53 Hosted Zone ID for your domain
+data "aws_route53_zone" "zone" {
+  name = "serverless.my.id."
+}
+
 # S3 Bucket for Static Website
 resource "aws_s3_bucket" "static_site" {
   bucket = "idn-new-timmy-8"
@@ -89,7 +94,7 @@ resource "aws_cloudfront_distribution" "cdn" {
 
 # Route 53 DNS Record
 resource "aws_route53_record" "subdomain" {
-  zone_id = var.route53_zone_id
+  zone_id = data.aws_route53_zone.zone.zone_id
   name    = "new-timmy-8.serverless.my.id"
   type    = "A"
 
