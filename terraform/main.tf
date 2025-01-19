@@ -92,16 +92,6 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 }
 
-# ACM Certificate
-resource "aws_acm_certificate" "cert" {
-  domain_name       = "new-timmy-8.serverless.my.id"
-  validation_method = "DNS"
-
-  tags = {
-    Name = "ACMCertificate"
-  }
-}
-
 resource "aws_route53_record" "cert_validation" {
   for_each = {
     for dvo in aws_acm_certificate.cert.domain_validation_options : dvo.domain_name => {
@@ -119,11 +109,6 @@ resource "aws_route53_record" "cert_validation" {
   records = [
     each.value.value,
   ]
-}
-
-resource "aws_acm_certificate_validation" "cert_validation" {
-  certificate_arn         = aws_acm_certificate.cert.arn
-  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
 # Route 53 Record for the Subdomain
